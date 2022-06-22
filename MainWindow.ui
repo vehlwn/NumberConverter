@@ -258,23 +258,23 @@
      <string>File</string>
     </property>
     <addaction name="actionSaveResult"/>
-    <addaction name="action"/>
+    <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menu_2">
     <property name="title">
      <string>Help</string>
     </property>
-    <addaction name="action_2"/>
+    <addaction name="actionHelpGrammar"/>
    </widget>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
   </widget>
-  <action name="action">
+  <action name="actionExit">
    <property name="text">
     <string>Exit</string>
    </property>
   </action>
-  <action name="action_2">
+  <action name="actionHelpGrammar">
    <property name="text">
     <string>Grammar</string>
    </property>

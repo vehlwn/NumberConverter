@@ -2,141 +2,230 @@
 
 #include "Ut.h"
 
+#include <cctype>
+#include <functional>
 #include <iterator>
 
-namespace nsNumberConverter
-{
+#include <boost/multiprecision/cpp_int.hpp>
 
-ParserException::ParserException(const std::string &msg, int pos)
-	: m_msg(msg), m_pos(pos)
-{}
-
-const char * ParserException::what() const noexcept
+namespace
 {
-	return m_msg.c_str();
+using Integer_t = boost::multiprecision::cpp_int;
+using Rational_t = boost::multiprecision::cpp_rational;
+
+Integer_t floor(const Rational_t& num)
+{
+	using namespace boost::multiprecision;
+	Integer_t num2 = numerator(num) / denominator(num);
+	if(Rational_t(num2) > num)
+		--num2;
+	return num2;
 }
 
-int ParserException::pos() const
-{
-	return m_pos;
-}
-
-const char NumberConverter::m_decimalSeparator = '.';
-
-std::string NumberConverter::operator() (const std::string &inputNumber
-		, const std::size_t base1
-		, const std::size_t base2
-		, const std::size_t digitsAfterPoint)
-{
-	m_base1 = base1;
-	m_base2 = base2;
-	m_digitsAfterPoint = digitsAfterPoint;
-	
-	if(std::min(m_base1, m_base2) < minBase() || std::max(m_base1, m_base2) > maxBase())
-	{
-		throw std::runtime_error(ut::toString("Base of a numeral system must be from ", minBase(), " to ", maxBase(), "."));
-	}
-
-	const auto pa = parseIntFractPart(inputNumber);
-	const auto &[intPartStr, fractPartStr] = pa;
-
-	const Integer_t intPart = toIntegerBase1(intPartStr);
-	const Rational_t fractPart(toIntegerBase1(fractPartStr)
-			, boost::multiprecision::pow(Integer_t(m_base1)
-				, static_cast<unsigned>(fractPartStr.size()))
-			);
-	
-	std::string s = toStringBase2(intPart);
-	if(!!fractPart && m_digitsAfterPoint > 0)
-	{
-		std::string s2 = fractionPartToString(fractPart);
-		s += ut::toString(m_decimalSeparator) + s2;
-	}
-	
-	return s;
-}
-
-std::string NumberConverter::toStringBase2(Integer_t num) const
-{
-	std::string res;
-	if(!num) return "0";
-	while(!!num)
-	{
-		Integer_t q, r;
-		boost::multiprecision::divide_qr(num, Integer_t(m_base2), q, r);
-		res += DIGITS()[static_cast<std::size_t>(r)];
-		num.swap(q);
-	}
-	std::reverse(res.begin(), res.end());
-	return res;
-}
-
-NumberConverter::Integer_t NumberConverter::toIntegerBase1(const std::string &inputNumber) const
-{
-	//std::string temp1, temp2;
-
-	Integer_t num = 0, num2 = 1;
-	for(auto it = inputNumber.rbegin(); it != inputNumber.rend(); ++it)
-	{
-		const char c = *it;
-
-		auto it2 = std::find(DIGITS().begin(), DIGITS().end(), c);
-		const auto num3 = std::distance(DIGITS().begin(), it2);
-
-		num += num2 * num3;
-		num2 *= m_base1;
-
-		//temp1 = to_string(num);
-		//temp2 = to_string(num2);
-	}
-	
-	return num;
-}
-
-
-NumberConverter::Rational_t NumberConverter::fract(const Rational_t &num)
+Rational_t fract(const Rational_t& num)
 {
 	return num - floor(num);
 }
 
-NumberConverter::Integer_t NumberConverter::floor(const Rational_t &num)
+const char DECIMAL_SEPARATOR =
+	std::use_facet<std::numpunct<char>>(std::locale{}).decimal_point();
+
+const std::vector<char> DIGITS = [] {
+	std::vector<char> ret;
+	for(char c = '0'; c <= '9'; c++)
+		ret.push_back(c);
+	for(char c = 'a'; c <= 'z'; c++)
+		ret.push_back(c);
+	return ret;
+}();
+
+std::string_view getValidDigits(const std::size_t base)
 {
-	using namespace boost::multiprecision;
-	Integer_t num2 = numerator(num) / denominator(num);
-	if(Rational_t(num2) > num) --num2;
-	return num2;
+	return {DIGITS.data(), base};
 }
 
-std::string NumberConverter::fractionPartToString(Rational_t num) const
+struct IntFractParts
+{
+	std::string_view intPart, fractPart;
+};
+IntFractParts parseIntFractPart(const std::string_view s, const std::size_t base1)
+{
+	std::size_t intPartBegin = 0, intPartLen = 0, fractPartBegin = 0, fractPartLen = 0;
+	const auto matches = [base1](const char c) {
+		const auto jt = std::find(DIGITS.begin(), DIGITS.end(), c);
+		const auto d = static_cast<std::size_t>(std::distance(DIGITS.begin(), jt));
+		return jt != DIGITS.end() && d < base1;
+	};
+	enum State
+	{
+		EXPECT_SPACE_OR_DOT_OR_INT_PART_BEGIN,
+		EXPECT_INT_PART_MIDDLE_OR_DOT,
+		EXPECT_FRACT_PART_BEGIN,
+		EXPECT_FRACT_PART_MIDDLE
+	} state = EXPECT_SPACE_OR_DOT_OR_INT_PART_BEGIN;
+	std::size_t i = 0;
+	for(; i != s.size(); i++)
+	{
+		const auto c = static_cast<char>(std::tolower(s[i]));
+		switch(state)
+		{
+		case EXPECT_SPACE_OR_DOT_OR_INT_PART_BEGIN:
+		{
+			if(std::isspace(c))
+				// Not cnahge.
+				;
+			else if(matches(c))
+			{
+				intPartBegin = i;
+				intPartLen = 1;
+				state = EXPECT_INT_PART_MIDDLE_OR_DOT;
+			}
+			else if(DECIMAL_SEPARATOR == c)
+			{
+				intPartBegin = i;
+				intPartLen = 0;
+				state = EXPECT_FRACT_PART_BEGIN;
+			}
+			else
+				throw nsNumberConverter::ParserException{
+					ut::toString("Invalid character in integer part: '", c,
+						"'. Expecting space or decimal separator '", DECIMAL_SEPARATOR,
+						"' or one of valid digits: '", getValidDigits(base1), "'."),
+					i};
+			break;
+		}
+		case EXPECT_INT_PART_MIDDLE_OR_DOT:
+		{
+			if(matches(c))
+			{
+				++intPartLen;
+				// Not cnahge.
+			}
+			else if(DECIMAL_SEPARATOR == c)
+				state = EXPECT_FRACT_PART_BEGIN;
+			else
+				throw nsNumberConverter::ParserException{
+					ut::toString("Invalid character in integer part: '", c,
+						"'. Expecting decimal separator '", DECIMAL_SEPARATOR,
+						"' or one of valid digits: '", getValidDigits(base1), "'."),
+					i};
+			break;
+		}
+		case EXPECT_FRACT_PART_BEGIN:
+		{
+			if(matches(c))
+			{
+				fractPartBegin = i;
+				fractPartLen = 1;
+				state = EXPECT_FRACT_PART_MIDDLE;
+			}
+			else
+				throw nsNumberConverter::ParserException{
+					ut::toString("Invalid character in fractional part: '", c,
+						"'. Expecting one of valid digits: '", getValidDigits(base1),
+						"'."),
+					i};
+			break;
+		}
+		case EXPECT_FRACT_PART_MIDDLE:
+		{
+			if(matches(c))
+			{
+				++fractPartLen;
+				// Not cnahge.
+			}
+			else
+				throw nsNumberConverter::ParserException{
+					ut::toString("Invalid character in fractional part: '", c,
+						"\'. Expecting one of valid digits: '", getValidDigits(base1),
+						"'."),
+					i};
+			break;
+		}
+		}
+	}
+	IntFractParts ret;
+	ret.intPart = s.substr(intPartBegin, intPartLen);
+	ret.fractPart = s.substr(fractPartBegin, fractPartLen);
+	return ret;
+}
+
+std::string toStringBase2(Integer_t num, const std::size_t base2)
+{
+	std::string ret;
+	if(!num)
+		return "0";
+	while(!!num)
+	{
+		Integer_t q, r;
+		boost::multiprecision::divide_qr(num, Integer_t{base2}, q, r);
+		const auto i = static_cast<std::size_t>(r);
+		ret += DIGITS[i];
+		num.swap(q);
+	}
+	std::reverse(ret.begin(), ret.end());
+	return ret;
+}
+
+Integer_t toIntegerBase1(const std::string_view inputNumber, const std::size_t base1)
+{
+	Integer_t ret = 0;
+	for(const char c : inputNumber)
+	{
+		const auto it = std::find(DIGITS.begin(), DIGITS.end(), c);
+		const auto d = std::distance(DIGITS.begin(), it);
+		ret = ret * base1 + d;
+	}
+	return ret;
+}
+
+std::string fractionPartToString(
+	Rational_t num, const std::size_t base2, const std::size_t digitsAfterPoint)
 {
 	std::string res;
-
-	//std::string temp1, temp2;
-	for(std::size_t i = 0; i < m_digitsAfterPoint; i++)
+	for(std::size_t i = 0; i < digitsAfterPoint; i++)
 	{
-		//temp1 = to_string(num);
-
-		num = fract(num) * m_base2;
-		//temp2 = to_string(num);
-
-		if(!num) break;
-		const auto num3 = static_cast<std::size_t>(floor(num));
-		res += DIGITS()[num3];
+		num = fract(num) * base2;
+		if(!num)
+			break;
+		const auto j = static_cast<std::size_t>(floor(num));
+		res += DIGITS[j];
 	}
 	return res;
 }
 
-const std::vector<char>& NumberConverter::DIGITS()
+} // namespace
+
+namespace nsNumberConverter
 {
-	using Value_t = std::vector<char>;
-	static std::unique_ptr<Value_t> vec;
-	if(!vec)
+// CLASS NumberConverter
+std::string NumberConverter::operator()(const std::string_view inputNumber,
+	const std::size_t base1, const std::size_t base2, const std::size_t digitsAfterPoint)
+{
+	m_base1 = base1;
+	m_base2 = base2;
+	m_digitsAfterPoint = digitsAfterPoint;
+
+	if(std::min(m_base1, m_base2) < minBase() || std::max(m_base1, m_base2) > maxBase())
 	{
-		vec = std::make_unique<Value_t>();
-		for(int c = '0'; c <= '9'; c++) vec->push_back(c);
-		for(int c = 'a'; c <= 'z'; c++) vec->push_back(c);
+		throw std::runtime_error(ut::toString(
+			"Base of a numeral system must be from ", minBase(), " to ", maxBase(), "."));
 	}
-	return *vec;
+
+	const auto parsed = parseIntFractPart(inputNumber, m_base1);
+
+	const Integer_t intPart = toIntegerBase1(parsed.intPart, m_base1);
+	const Rational_t fractPart{toIntegerBase1(parsed.fractPart, m_base1),
+		boost::multiprecision::pow(
+			Integer_t{m_base1}, static_cast<unsigned>(parsed.fractPart.size()))};
+
+	std::string s = toStringBase2(intPart, m_base2);
+	if(!!fractPart && m_digitsAfterPoint > 0)
+	{
+		std::string s2 = fractionPartToString(fractPart, m_base2, m_digitsAfterPoint);
+		s += ut::toString(DECIMAL_SEPARATOR) + s2;
+	}
+	return s;
 }
 
 std::size_t NumberConverter::minBase() const
@@ -146,54 +235,29 @@ std::size_t NumberConverter::minBase() const
 
 std::size_t NumberConverter::maxBase() const
 {
-	return DIGITS().size();
+	return DIGITS.size();
 }
 
-std::pair<std::string, std::string> NumberConverter::parseIntFractPart(std::string s) const
+char NumberConverter::decimal_point()
 {
-	std::string intPartStr, fractPartStr;
-	s = boost::algorithm::to_lower_copy(s);
-	auto it = s.begin();
-	while(it != s.end() && *it != m_decimalSeparator)
-	{
-		auto it2 = std::find(DIGITS().begin(), DIGITS().end(), *it);
-		const std::size_t num = std::distance(DIGITS().begin(), it2);
-		if(it2 == DIGITS().end() || num >= m_base1) break;
-		intPartStr += *it;
-		++it;
-	}
-	if(intPartStr.empty())
-		throw std::runtime_error("Empty integer part is not allowed.");
-	if(it == s.end())
-	{
-		return {intPartStr, ""};
-	}
-	if(*it != m_decimalSeparator)
-	{
-		throw ParserException(
-					ut::toString("Invalid character \'", *it, "\'.")
-					, std::distance(s.begin(), it));
-	}
-	++it;
+	return DECIMAL_SEPARATOR;
+}
 
-	while(it != s.end())
-	{
-		auto it2 = std::find(DIGITS().begin(), DIGITS().end(), *it);
-		const std::size_t num = std::distance(DIGITS().begin(), it2);
-		if(it2 == DIGITS().end() || num >= m_base1) break;
-		fractPartStr += *it;
-		++it;
-	}
-	if(it == s.end())
-	{
-		return {intPartStr, fractPartStr};
-	}
-	else
-	{
-		throw ParserException(
-					ut::toString("Invalid character \'", *it, "\'.")
-					, std::distance(s.begin(), it));
-	}
+// CLASS ParserException
+ParserException::ParserException(const std::string& msg, const std::size_t pos)
+	: m_msg{msg}
+	, m_pos{pos}
+{
+}
+
+const char* ParserException::what() const noexcept
+{
+	return m_msg.c_str();
+}
+
+std::size_t ParserException::pos() const
+{
+	return m_pos;
 }
 
 } // namespace nsNumberConverter

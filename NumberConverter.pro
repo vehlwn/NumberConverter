@@ -18,7 +18,7 @@ QMAKE_CXXFLAGS_RELEASE += -O3
 
 QMAKE_CXXFLAGS_DEBUG += -O0
 
-QMAKE_CXXFLAGS += -isystemK:\1\0\source\boost_1_71_0
+QMAKE_CXXFLAGS += -isystemK:/1/0/source/boost_install/include/boost-1_72
 
 
 SOURCES += main.cpp\

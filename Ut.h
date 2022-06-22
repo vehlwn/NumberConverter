@@ -1,12 +1,11 @@
-#ifndef UT_H
-#define UT_H
+#pragma once
 
-#include <string>
 #include <sstream>
+#include <string>
 
 namespace ut
 {
-template<class ...Args>
+template<class... Args>
 std::string toString(const Args&... args)
 {
 	std::ostringstream os;
@@ -14,6 +13,4 @@ std::string toString(const Args&... args)
 	return os.str();
 }
 
-}
-
-#endif // UT_H
+} // namespace ut
