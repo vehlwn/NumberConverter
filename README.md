@@ -4,7 +4,7 @@ Convert integers and fixed point reals between numeral systems. Supports numeral
 The program is written in C++17 and depends on Boost for MPIs and Qt for interface.
 
 ## Pseudocode
-### Core procedure
+### Main procedure
 Input: 
 - inputNumber - string, a number in system base1. inputNumber can contain integer part, decimal point and fraction part;
 - base1 - integer, numeral system of input number;
