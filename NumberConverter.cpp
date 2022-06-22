@@ -2,14 +2,12 @@
 
 #include "Ut.h"
 
+#include <boost/multiprecision/cpp_int.hpp>
 #include <cctype>
 #include <functional>
 #include <iterator>
 
-#include <boost/multiprecision/cpp_int.hpp>
-
-namespace
-{
+namespace {
 using Integer_t = boost::multiprecision::cpp_int;
 using Rational_t = boost::multiprecision::cpp_rational;
 
@@ -196,8 +194,7 @@ std::string fractionPartToString(
 
 } // namespace
 
-namespace nsNumberConverter
-{
+namespace nsNumberConverter {
 // CLASS NumberConverter
 std::string NumberConverter::operator()(const std::string_view inputNumber,
     const std::size_t base1, const std::size_t base2, const std::size_t digitsAfterPoint)
@@ -209,7 +206,7 @@ std::string NumberConverter::operator()(const std::string_view inputNumber,
     if(std::min(m_base1, m_base2) < minBase() || std::max(m_base1, m_base2) > maxBase())
     {
         throw std::runtime_error(ut::toString(
-            "Base of a numeral system must be from ", minBase(), " to ", maxBase(), "."));
+            "Base of a number system must be from ", minBase(), " to ", maxBase(), "."));
     }
 
     const auto parsed = parseIntFractPart(inputNumber, m_base1);

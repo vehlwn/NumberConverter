@@ -3,8 +3,7 @@
 #include <sstream>
 #include <string>
 
-namespace ut
-{
+namespace ut {
 template<class... Args>
 std::string toString(const Args&... args)
 {

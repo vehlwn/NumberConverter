@@ -9,8 +9,7 @@
 #include <sstream>
 #include <string>
 
-namespace nsNumberConverter
-{
+namespace nsNumberConverter {
 // CLASS NumberConverter
 class NumberConverter
 {
