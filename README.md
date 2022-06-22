@@ -1,7 +1,7 @@
 # NumberConverter
-Convert integers and fixed point reals between number systems. Supports number systems form 2 to 36. Alphabet is '0-9a-z\.'. Input strings are case insensitive. Parsing of input string stops when meets wrong character in a given system and shows you an error message. Length of numbers is limited olny by your available memory as the program depends on Boost multiprecision integers (MPI).
+Convert integers and fixed point reals between number systems. Supports number systems form 2 to 36. Alphabet is '0-9a-z\\.'. Input strings are case insensitive. Parsing of input string stops when meets the first wrong character in a given system and shows you an error message. Length of numbers is limited olny by your available memory as the program depends on Boost multiprecision integers (MPI).
 
-The program is written in C++17 and depends on Boost for MPIs and Qt for interface.
+The program is written in C++17 and depends on [Boost](https://www.boost.org/) for MPIs and [Qt](https://www.qt.io/) for interface.
 
 ## Pseudocode
 ### Main procedure
@@ -128,7 +128,7 @@ Output:
 More details in [this](NumberConverter.cpp) file.
 
 ## Examples
-![alt text](examples/example1.png)
-![alt text](examples/example2.png)
-![alt text](examples/example3.png)
-![alt text](examples/example4.png)
+![example1](examples/example1.png)
+![example2](examples/example2.png)
+![example3](examples/example3.png)
+![example4](examples/example4.png)
