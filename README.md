@@ -1,5 +1,5 @@
 # NumberConverter
-Convert integers and fixed point reals between numeral systems. Supports numeral systems form 2 to 36. Alphabet is '0-9a-z\.'. Input strings are case insensitive. Parsing of input string stops when meets the first error (wrong character in a given system) and shows you an error message. Length of numbers is limited olny by your available memory as the program depends on Boost multiprecision integers (MPI).
+Convert integers and fixed point reals between numeral systems. Supports numeral systems form 2 to 36. Alphabet is '0-9a-z\.'. Input strings are case insensitive. Parsing of input string stops when meets wrong character in a given system and shows you an error message. Length of numbers is limited olny by your available memory as the program depends on Boost multiprecision integers (MPI).
 
 The program is written in C++17 and depends on Boost for MPIs and Qt for interface.
 
@@ -32,17 +32,16 @@ Input:
 - inputNumber - string form of a MPI in system base1.
 
 Output:
-- num - MPI form of inputNumber.
+- ret - MPI form of inputNumber.
 
 Variables:
 - digits - vector of chars 0,..,9,a,..,z, where item's index from the beginning denotes numeral value of this symbolic digit. Indicies are 0-based.
 
 ```
-1. Put MPIs num := 0, num2 := 1.
-2. For every char c in inputNumber from end to begin do:
-2.1. Put num3 := index of c in vector digits.
-2.2. Assign num += num2 * num3.
-2.3. Assign num2 *= base1.
+1. Put MPIs ret := 0.
+2. For every char c in inputNumber from begin to end do:
+2.1. Put d := index of c in vector digits.
+2.2. Assign ret := ret * base1 + d.
 3. Return num.
 ```
 
@@ -72,7 +71,7 @@ Variables:
 2.1. Return "0".
 2. While inputNumber > 0 do:
 2.1. Divide inputNumber by base2 and get numbers:
-     r - integer, remainder;
+     r - unsigned, remainder;
      q - MPI, quotient.
 2.2. Assign outStr += digits[r].
 2.3. Assign inputNumber := q.
@@ -108,7 +107,9 @@ Input:
 Output:
 - num2 - rational number, fractional part of num.
 
-Implementation is not interesting.
+```
+Return num - floor(num);
+```
 
 ### Procedure floor
 Input: 
@@ -117,7 +118,12 @@ Input:
 Output:
 - num2 - MPI derived from rounding num to nearest integer towards minus inf.
 
-Implementation is not interesting.
+```
+1. Put num2 := numerator(num) / denominator(num).
+2. If num2 > num:
+2.1 Decrement --num2.
+3. Return num2.
+```
 
 More details in [this](NumberConverter.cpp) file.
 
