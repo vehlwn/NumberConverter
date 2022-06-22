@@ -11,9 +11,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = NumberConverter
 TEMPLATE = app
 
-#CONFIG += c++11
-
-QMAKE_CXXFLAGS += -std=c++17 -Werror=return-type -Werror=pedantic --pedantic-errors -Wall -Wextra
+QMAKE_CXXFLAGS += -std=c++17 -Werror=return-type -Werror=pedantic -pedantic-errors -Wall -Wextra
 
 QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O3

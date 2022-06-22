@@ -34,14 +34,14 @@ std::string NumberConverter::operator() (const std::string &inputNumber
 	
 	if(std::min(m_base1, m_base2) < minBase() || std::max(m_base1, m_base2) > maxBase())
 	{
-		throw std::runtime_error(Ut::toString("Base of a numeral system must be from ", minBase(), " to ", maxBase(), "."));
+		throw std::runtime_error(ut::toString("Base of a numeral system must be from ", minBase(), " to ", maxBase(), "."));
 	}
 
 	const auto pa = parseIntFractPart(inputNumber);
 	const auto &[intPartStr, fractPartStr] = pa;
 
-	const Integer_t intPart = toInteger(intPartStr);
-	const Rational_t fractPart(toInteger(fractPartStr)
+	const Integer_t intPart = toIntegerBase1(intPartStr);
+	const Rational_t fractPart(toIntegerBase1(fractPartStr)
 			, boost::multiprecision::pow(Integer_t(m_base1)
 				, static_cast<unsigned>(fractPartStr.size()))
 			);
@@ -50,7 +50,7 @@ std::string NumberConverter::operator() (const std::string &inputNumber
 	if(!!fractPart && m_digitsAfterPoint > 0)
 	{
 		std::string s2 = fractionPartToString(fractPart);
-		s += Ut::toString(m_decimalSeparator) + s2;
+		s += ut::toString(m_decimalSeparator) + s2;
 	}
 	
 	return s;
@@ -71,7 +71,7 @@ std::string NumberConverter::toStringBase2(Integer_t num) const
 	return res;
 }
 
-NumberConverter::Integer_t NumberConverter::toInteger(const std::string &inputNumber) const
+NumberConverter::Integer_t NumberConverter::toIntegerBase1(const std::string &inputNumber) const
 {
 	//std::string temp1, temp2;
 
@@ -94,12 +94,12 @@ NumberConverter::Integer_t NumberConverter::toInteger(const std::string &inputNu
 }
 
 
-NumberConverter::Rational_t NumberConverter::fract(Rational_t num)
+NumberConverter::Rational_t NumberConverter::fract(const Rational_t &num)
 {
 	return num - floor(num);
 }
 
-NumberConverter::Integer_t NumberConverter::floor(Rational_t num)
+NumberConverter::Integer_t NumberConverter::floor(const Rational_t &num)
 {
 	using namespace boost::multiprecision;
 	Integer_t num2 = numerator(num) / denominator(num);
@@ -162,6 +162,8 @@ std::pair<std::string, std::string> NumberConverter::parseIntFractPart(std::stri
 		intPartStr += *it;
 		++it;
 	}
+	if(intPartStr.empty())
+		throw std::runtime_error("Empty integer part is not allowed.");
 	if(it == s.end())
 	{
 		return {intPartStr, ""};
@@ -169,7 +171,7 @@ std::pair<std::string, std::string> NumberConverter::parseIntFractPart(std::stri
 	if(*it != m_decimalSeparator)
 	{
 		throw ParserException(
-					Ut::toString("Invalid character \'", *it, "\'.")
+					ut::toString("Invalid character \'", *it, "\'.")
 					, std::distance(s.begin(), it));
 	}
 	++it;
@@ -189,7 +191,7 @@ std::pair<std::string, std::string> NumberConverter::parseIntFractPart(std::stri
 	else
 	{
 		throw ParserException(
-					Ut::toString("Invalid character \'", *it, "\'.")
+					ut::toString("Invalid character \'", *it, "\'.")
 					, std::distance(s.begin(), it));
 	}
 }

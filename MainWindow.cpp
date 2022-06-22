@@ -1,6 +1,11 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QFile>
+#include <QTextStream>
+
 #include <memory>
 #include <algorithm>
 
@@ -17,7 +22,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	clearFields();
 
-	ui->label_7->setText(QString::fromStdString(Ut::toString(
+	ui->label_7->setText(QString::fromStdString(ut::toString(
 		"(", m_conv.minBase(), "..", m_conv.maxBase(), ")")));
 }
 
@@ -34,26 +39,20 @@ void MainWindow::on_action_triggered()
 
 void MainWindow::on_pushButton_clicked() try
 {
-	const std::string inputNumber = ui->plainTextEditInput->toPlainText().toStdString();
-
-	const auto base1 = std::clamp<std::size_t>(ui->lineEditBase1->text().toUInt(), m_conv.minBase(), m_conv.maxBase());
-	ui->lineEditBase1->setText(QString::number(base1));
-
-	const auto base2 = std::clamp<std::size_t>(ui->lineEditBase2->text().toUInt(), m_conv.minBase(), m_conv.maxBase());
-	ui->lineEditBase2->setText(QString::number(base2));
-
-	const auto digitsAfterPoint = static_cast<std::size_t>(ui->lineEdit_3->text().toUInt());
-
-	const std::string res = m_conv(inputNumber, base1, base2, digitsAfterPoint);
-	ui->plainTextEditOutput->setPlainText(QString::fromStdString(res));
+	readFields();
+	m_qResult = "";
+	m_qResult = QString::fromStdString(m_conv(m_qInputNumber.toStdString()
+								   , m_base1
+								   , m_base2
+								   , m_precision));
+	ui->plainTextEditOutput->setPlainText(m_qResult);
 }
 catch(const nsNumberConverter::ParserException &ex)
 {
 	QMessageBox::critical(this, "Error", ex.what());
-
 	auto cursor = ui->plainTextEditInput->textCursor();
-	cursor.movePosition(QTextCursor::Start);
-	cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, ex.pos());
+	cursor.setPosition(ex.pos());
+	cursor.setPosition(ex.pos() + 1, QTextCursor::KeepAnchor);
 	ui->plainTextEditInput->setTextCursor(cursor);
 	ui->plainTextEditInput->setFocus();
 }
@@ -67,17 +66,16 @@ void MainWindow::clearFields()
 	ui->plainTextEditInput->setPlainText("");
 	ui->lineEditBase1->setText("10");
 	ui->lineEditBase2->setText("2");
-	ui->lineEdit_3->setText("20");
+	ui->lineEditPrecision->setText("20");
 	ui->plainTextEditOutput->setPlainText("");
 	ui->plainTextEditInput->setFocus();
-
+	m_qResult = "";
 }
 
 void MainWindow::on_pushButton_2_clicked()
 {
 	clearFields();
 }
-
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
@@ -117,6 +115,15 @@ bool MainWindow::eventFilter(QObject *target, QEvent *event)
 	return QMainWindow::eventFilter(target, event);
 }
 
+void MainWindow::readFields()
+{
+	m_qInputNumber = ui->plainTextEditInput->toPlainText();
+	m_base1 = std::clamp<std::size_t>(ui->lineEditBase1->text().toUInt(), m_conv.minBase(), m_conv.maxBase());
+	ui->lineEditBase1->setText(QString::number(m_base1));
+	m_base2 = std::clamp<std::size_t>(ui->lineEditBase2->text().toUInt(), m_conv.minBase(), m_conv.maxBase());
+	ui->lineEditBase2->setText(QString::number(m_base2));
+	m_precision = ui->lineEditPrecision->text().toUInt();
+}
 
 void MainWindow::on_plainTextEditInput_textChanged()
 {
@@ -132,3 +139,33 @@ void MainWindow::on_action_3_triggered()
 {
 	QMessageBox::information(this, "Grammar", R"(E -> [0-9a-zA-Z]*(\.[0-9a-zA-Z]*)?)");
 }
+
+void MainWindow::on_actionSaveResult_triggered() try
+{
+	// Save result to a file.
+	if(m_qResult.isEmpty())
+		throw std::runtime_error("No computed result.");
+
+	static QString oldName = "NumberConverter";
+	const QString fileName = QFileDialog::getSaveFileName(this,
+													"Save result",
+													oldName,
+													"Text files (*.txt);;All files (*.*)");
+
+	if(fileName.isEmpty()) return;
+	oldName = fileName;
+
+	QFile file(fileName);
+	bool f = file.open(QIODevice::WriteOnly | QIODevice::Text);
+	if(!f)
+		throw std::runtime_error("Cannot open " + fileName.toStdString());
+
+	QTextStream streamOut(&file);
+	streamOut << m_qInputNumber << "_{" << m_base1 << "} = "
+			  << m_qResult << "_{" << m_base2 << "}";
+}
+catch(const std::exception &ex)
+{
+	QMessageBox::critical(this, "Error", ex.what());
+}
+

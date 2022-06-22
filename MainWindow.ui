@@ -190,7 +190,7 @@
       <item row="0" column="3">
        <widget class="QLabel" name="label_8">
         <property name="text">
-         <string>Accuracy:</string>
+         <string>Precision:</string>
         </property>
        </widget>
       </item>
@@ -202,7 +202,7 @@
        </widget>
       </item>
       <item row="1" column="3">
-       <widget class="QLineEdit" name="lineEdit_3">
+       <widget class="QLineEdit" name="lineEditPrecision">
         <property name="maximumSize">
          <size>
           <width>60</width>
@@ -257,13 +257,14 @@
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="actionSaveResult"/>
     <addaction name="action"/>
    </widget>
    <widget class="QMenu" name="menu_2">
     <property name="title">
      <string>Help</string>
     </property>
-    <addaction name="action_3"/>
+    <addaction name="action_2"/>
    </widget>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
@@ -273,9 +274,14 @@
     <string>Exit</string>
    </property>
   </action>
-  <action name="action_3">
+  <action name="action_2">
    <property name="text">
     <string>Grammar</string>
+   </property>
+  </action>
+  <action name="actionSaveResult">
+   <property name="text">
+    <string>Save result...</string>
    </property>
   </action>
  </widget>
@@ -284,7 +290,7 @@
   <tabstop>plainTextEditInput</tabstop>
   <tabstop>lineEditBase1</tabstop>
   <tabstop>lineEditBase2</tabstop>
-  <tabstop>lineEdit_3</tabstop>
+  <tabstop>lineEditPrecision</tabstop>
   <tabstop>plainTextEditOutput</tabstop>
   <tabstop>pushButton</tabstop>
   <tabstop>pushButton_2</tabstop>

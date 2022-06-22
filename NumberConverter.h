@@ -33,12 +33,12 @@ private:
 	using Rational_t = boost::multiprecision::cpp_rational;
 
 	static const std::vector<char>& DIGITS();
-	static Rational_t fract(Rational_t num);
-	static Integer_t floor(Rational_t num);
+	static Rational_t fract(const Rational_t &num);
+	static Integer_t floor(const Rational_t &num);
 	std::pair<std::string, std::string> parseIntFractPart(std::string s) const;
 
 	std::string toStringBase2(Integer_t num) const;
-	Integer_t toInteger(const std::string &inputNumber) const;
+	Integer_t toIntegerBase1(const std::string &inputNumber) const;
 	std::string fractionPartToString(Rational_t num) const;
 
 	static const char m_decimalSeparator;

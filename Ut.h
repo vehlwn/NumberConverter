@@ -4,7 +4,7 @@
 #include <string>
 #include <sstream>
 
-namespace Ut
+namespace ut
 {
 template<class ...Args>
 std::string toString(const Args&... args)

@@ -2,11 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QMessageBox>
-
 
 #include "NumberConverter.h"
-
 
 namespace Ui {
 class MainWindow;
@@ -33,13 +30,19 @@ private slots:
 
 	void on_action_3_triggered();
 
+	void on_actionSaveResult_triggered();
+
 private:
 	Ui::MainWindow *ui;
 
 	nsNumberConverter::NumberConverter m_conv;
 
+	QString m_qInputNumber, m_qResult;
+	std::size_t m_base1{}, m_base2{}, m_precision{};
+
 	void keyPressEvent(QKeyEvent *event) override;
 	bool eventFilter(QObject *target, QEvent *event) override;
+	void readFields();
 	void clearFields();
 };
 
