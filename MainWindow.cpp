@@ -29,7 +29,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::on_pushButton_clicked()
+void MainWindow::on_pushButtonConvert_clicked()
 try
 {
     readFields();
@@ -54,16 +54,19 @@ catch(const std::exception& ex)
 
 void MainWindow::clearFields()
 {
-    ui->plainTextEditInput->setPlainText("");
-    ui->lineEditBase1->setText("10");
-    ui->lineEditBase2->setText("2");
-    ui->lineEditPrecision->setText("20");
-    ui->plainTextEditOutput->setPlainText("");
+    m_qInputNumber = m_qResult = "";
+    m_base1 = 10;
+    m_base2 = 2;
+    m_precision = 20;
+    ui->plainTextEditInput->setPlainText(m_qInputNumber);
+    ui->plainTextEditOutput->setPlainText(m_qResult);
+    ui->lineEditBase1->setText(QString::number(m_base1));
+    ui->lineEditBase2->setText(QString::number(m_base2));
+    ui->lineEditPrecision->setText(QString::number(m_precision));
     ui->plainTextEditInput->setFocus();
-    m_qResult = "";
 }
 
-void MainWindow::on_pushButton_2_clicked()
+void MainWindow::on_pushButtonClear_clicked()
 {
     clearFields();
 }
@@ -74,11 +77,11 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
     {
     case Qt::Key_Return:
     case Qt::Key_Enter:
-        on_pushButton_clicked();
+        on_pushButtonConvert_clicked();
         break;
 
     case Qt::Key_Escape:
-        on_pushButton_2_clicked();
+        on_pushButtonClear_clicked();
         break;
     }
 }
@@ -94,11 +97,11 @@ bool MainWindow::eventFilter(QObject* target, QEvent* event)
             {
             case Qt::Key_Return:
             case Qt::Key_Enter:
-                on_pushButton_clicked();
+                on_pushButtonConvert_clicked();
                 return true;
 
             case Qt::Key_Escape:
-                on_pushButton_2_clicked();
+                on_pushButtonClear_clicked();
                 return true;
             }
         }
@@ -178,4 +181,19 @@ void MainWindow::on_actionHelpGrammar_triggered()
                 "\nFractPart <- Digit+"
                 "\nDigit <- [0-9a-zA-Z]"}
             .arg(nsNumberConverter::NumberConverter::decimal_point()));
+}
+
+void MainWindow::on_pushButtonSwap_clicked()
+{
+    QString inputStr = m_qInputNumber;
+    QString outStr = m_qResult;
+    inputStr.swap(outStr);
+    ui->plainTextEditInput->setPlainText(inputStr);
+
+    QString base1Str = QString::number(m_base1);
+    QString base2Str = QString::number(m_base2);
+    ui->lineEditBase1->setText(base2Str);
+    ui->lineEditBase2->setText(base1Str);
+
+    on_pushButtonConvert_clicked();
 }
