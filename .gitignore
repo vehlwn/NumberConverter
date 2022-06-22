@@ -1,2 +1,3 @@
-/build*
-/*.user
+# Added by cargo
+
+/target
