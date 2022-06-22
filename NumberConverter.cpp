@@ -1,13 +1,19 @@
 #include "NumberConverter.h"
 
-#include "Ut.h"
-
 #include <boost/multiprecision/cpp_int.hpp>
 #include <cctype>
 #include <functional>
 #include <iterator>
 
 namespace {
+template<class... Args>
+std::string toString(const Args&... args)
+{
+    std::ostringstream os;
+    (os << ... << args);
+    return os.str();
+}
+
 using Integer_t = boost::multiprecision::cpp_int;
 using Rational_t = boost::multiprecision::cpp_rational;
 
@@ -49,7 +55,7 @@ struct IntFractParts
 IntFractParts parseIntFractPart(const std::string_view s, const std::size_t base1)
 {
     std::size_t intPartBegin = 0, intPartLen = 0, fractPartBegin = 0, fractPartLen = 0;
-    const auto  matches = [base1](const char c) {
+    const auto matches = [base1](const char c) {
         const auto jt = std::find(DIGITS.begin(), DIGITS.end(), c);
         const auto d = static_cast<std::size_t>(std::distance(DIGITS.begin(), jt));
         return jt != DIGITS.end() && d < base1;
@@ -86,7 +92,7 @@ IntFractParts parseIntFractPart(const std::string_view s, const std::size_t base
             }
             else
                 throw nsNumberConverter::ParserException{
-                    ut::toString("Invalid character in integer part: '", c,
+                    toString("Invalid character in integer part: '", c,
                         "'. Expecting space or decimal separator '", DECIMAL_SEPARATOR,
                         "' or one of valid digits: '", getValidDigits(base1), "'."),
                     i};
@@ -103,7 +109,7 @@ IntFractParts parseIntFractPart(const std::string_view s, const std::size_t base
                 state = EXPECT_FRACT_PART_BEGIN;
             else
                 throw nsNumberConverter::ParserException{
-                    ut::toString("Invalid character in integer part: '", c,
+                    toString("Invalid character in integer part: '", c,
                         "'. Expecting decimal separator '", DECIMAL_SEPARATOR,
                         "' or one of valid digits: '", getValidDigits(base1), "'."),
                     i};
@@ -119,7 +125,7 @@ IntFractParts parseIntFractPart(const std::string_view s, const std::size_t base
             }
             else
                 throw nsNumberConverter::ParserException{
-                    ut::toString("Invalid character in fractional part: '", c,
+                    toString("Invalid character in fractional part: '", c,
                         "'. Expecting one of valid digits: '", getValidDigits(base1),
                         "'."),
                     i};
@@ -134,7 +140,7 @@ IntFractParts parseIntFractPart(const std::string_view s, const std::size_t base
             }
             else
                 throw nsNumberConverter::ParserException{
-                    ut::toString("Invalid character in fractional part: '", c,
+                    toString("Invalid character in fractional part: '", c,
                         "\'. Expecting one of valid digits: '", getValidDigits(base1),
                         "'."),
                     i};
@@ -205,13 +211,13 @@ std::string NumberConverter::operator()(const std::string_view inputNumber,
 
     if(std::min(m_base1, m_base2) < minBase() || std::max(m_base1, m_base2) > maxBase())
     {
-        throw std::runtime_error(ut::toString(
+        throw std::runtime_error(toString(
             "Base of a number system must be from ", minBase(), " to ", maxBase(), "."));
     }
 
     const auto parsed = parseIntFractPart(inputNumber, m_base1);
 
-    const Integer_t  intPart = toIntegerBase1(parsed.intPart, m_base1);
+    const Integer_t intPart = toIntegerBase1(parsed.intPart, m_base1);
     const Rational_t fractPart{toIntegerBase1(parsed.fractPart, m_base1),
         boost::multiprecision::pow(
             Integer_t{m_base1}, static_cast<unsigned>(parsed.fractPart.size()))};
@@ -220,7 +226,7 @@ std::string NumberConverter::operator()(const std::string_view inputNumber,
     if(fractPart && m_digitsAfterPoint > 0)
     {
         std::string s2 = fractionPartToString(fractPart, m_base2, m_digitsAfterPoint);
-        s += ut::toString(DECIMAL_SEPARATOR) + s2;
+        s += toString(DECIMAL_SEPARATOR) + s2;
     }
     return s;
 }

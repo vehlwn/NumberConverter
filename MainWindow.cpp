@@ -140,14 +140,14 @@ try
         throw std::runtime_error("No computed result.");
 
     static QString oldName = "NumberConverter";
-    const QString  fileName = QFileDialog::getSaveFileName(
+    const QString fileName = QFileDialog::getSaveFileName(
         this, "Save result", oldName, "Text files (*.txt);;All files (*.*)");
     if(fileName.isEmpty())
         return;
     oldName = fileName;
 
     QFile file{fileName};
-    bool  f = file.open(QIODevice::WriteOnly | QIODevice::Text);
+    bool f = file.open(QIODevice::WriteOnly | QIODevice::Text);
     if(!f)
         throw std::runtime_error("Cannot open " + fileName.toStdString());
 

@@ -30,7 +30,7 @@ private:
 
     nsNumberConverter::NumberConverter m_converter;
 
-    QString     m_qInputNumber, m_qResult;
+    QString m_qInputNumber, m_qResult;
     std::size_t m_base1{}, m_base2{}, m_precision{};
 
     void keyPressEvent(QKeyEvent* event) override;
